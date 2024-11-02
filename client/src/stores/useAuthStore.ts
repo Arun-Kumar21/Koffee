@@ -8,9 +8,29 @@ type CredentialsType = {
   loginField: string;
 };
 
-const useAuthStore = create(
+type UserType = {
+  id: string;
+  name: string;
+  email: string;
+  // Add other user properties if necessary
+};
+
+type AuthStoreType = {
+  user: UserType | null;
+  loading: boolean;
+  isAuthenticated: boolean;
+  error: string | null;
+
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  setUser: (user: UserType | null) => void;
+  login: (credentials: CredentialsType) => Promise<void>;
+  logout: () => void;
+};
+
+const useAuthStore = create<AuthStoreType>()(
   persist(
-    (set: any, get: any) => ({
+    (set, get) => ({
       // Initial state
       user: null,
       loading: false,
@@ -18,164 +38,33 @@ const useAuthStore = create(
       error: null,
 
       // Actions
-      setLoading: (loading: boolean) => set({ loading }),
-      setError: (error: any) => set({ error }),
+      setLoading: (loading) => set({ loading }),
+      setError: (error) => set({ error }),
+      setUser: (user) => set({ user, isAuthenticated: !!user }),
 
-      // Check authentication status
-      checkAuth: async () => {
+      // Login action with more specific typing
+      login: async (credentials) => {
         try {
           set({ loading: true, error: null });
-          const response = await axios.get(
-            `${import.meta.env.VITE_SERVER_URL}/api/v1/user/verify`,
-            {
-              withCredentials: true,
-            }
-          );
-
+          const response = await axios.post("/api/login", credentials);
+          const user = response.data;
+          set({ user, isAuthenticated: true, loading: false });
+        } catch (error) {
           set({
-            user: response.data.user,
-            isAuthenticated: true,
+            error: error instanceof Error ? error.message : "Login failed",
             loading: false,
           });
-
-          return true;
-        } catch (error: any) {
-          set({
-            user: null,
-            isAuthenticated: false,
-            loading: false,
-            error: error.response?.data?.message || "Authentication failed",
-          });
-          return false;
         }
       },
 
-      // Register user
-      register: async (
-        name: string,
-        username: string,
-        email: string,
-        password: string,
-        avatar: string
-      ) => {
-        try {
-          set({ loading: true, error: null });
-          await axios.post(
-            `${import.meta.env.VITE_SERVER_URL}/api/v1/user/register`,
-            {
-              name,
-              userName: username,
-              email,
-              password,
-              avatar,
-            }
-          );
-
-          set({
-            loading: false,
-          });
-
-          return { success: true };
-        } catch (error: any) {
-          set({
-            loading: false,
-            error: error.response?.data?.message || "Registration failed",
-          });
-          return {
-            success: false,
-            error: error.response?.data?.message || "Registration failed",
-          };
-        }
+      // Logout action
+      logout: () => {
+        set({ user: null, isAuthenticated: false });
       },
-
-      // Login user
-      login: async (credentials: CredentialsType) => {
-        try {
-          set({ loading: true, error: null });
-          const response = credentials.isEmail
-            ? await axios.post(
-                `${import.meta.env.VITE_SERVER_URL}/api/v1/user/login`,
-                {
-                  email: credentials.loginField,
-                  password: credentials.password,
-                },
-                {
-                  withCredentials: true,
-                }
-              )
-            : await axios.post(
-                `${import.meta.env.VITE_SERVER_URL}/api/v1/user/login`,
-                {
-                  userName: credentials.loginField,
-                  password: credentials.password,
-                },
-                {
-                  withCredentials: true,
-                }
-              );
-
-          set({
-            user: response.data.user,
-            isAuthenticated: true,
-            loading: false,
-          });
-
-          return { success: true };
-        } catch (error: any) {
-          console.log(error);
-
-          set({
-            loading: false,
-            error: error.response?.data?.message || "Login failed",
-          });
-          return {
-            success: false,
-            error: error.response?.data?.message || "Login failed",
-          };
-        }
-      },
-
-      // Logout
-      logout: async () => {
-        const user = get().user;
-
-        try {
-          set({ loading: true, error: null });
-          await axios.post(
-            `${import.meta.env.VITE_SERVER_URL}/api/v1/user/logout`,
-            {
-              email: user.email,
-            },
-            {
-              withCredentials: true,
-            }
-          );
-
-          set({
-            user: null,
-            isAuthenticated: false,
-            loading: false,
-          });
-
-          return { success: true };
-        } catch (error: any) {
-          set({
-            loading: false,
-            error: error.response?.data?.message || "Logout failed",
-          });
-          return {
-            success: false,
-            error: error.response?.data?.message || "Logout failed",
-          };
-        }
-      },
-
-      // Clear all errors
-      clearErrors: () => set({ error: null }),
     }),
     {
       name: "auth-storage",
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );
