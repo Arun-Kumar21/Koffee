@@ -6,9 +6,9 @@ import { Request, Response } from "express";
 // @route POST /api/v1/document/create
 // @desc Create a document
 
-export const createDocument = async (req: Request, res: Response) => {
+export const createDocument = async (req: any, res: Response) => {
     try {
-        const { title, content, slug, user } = req.body;
+        const { title, content, slug } = req.body;
         if (!title || !content || !slug) {
             return res.status(400).json({ message: "Please enter all fields" });
         }
@@ -16,7 +16,7 @@ export const createDocument = async (req: Request, res: Response) => {
             title,
             content,
             slug,
-            user
+            user: req.user._id
         });
         return res.status(201).json({
             message: "Document created successfully",
@@ -82,6 +82,7 @@ export const getDocuments = async (req: Request, res: Response) => {
 
 export const getDocument = async (req: Request, res: Response) => {
     try {
+        console.log("req", req.socket);
         const document = await Document.findById(req.params.id).populate("user");
         return res.status(200).json({
             data: document

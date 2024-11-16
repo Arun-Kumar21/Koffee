@@ -1,7 +1,8 @@
 import { Server } from "socket.io";
 
+let io:Server;
 function initSocket(server: any) {
-  const io = new Server(server, {
+   io = new Server(server, {
     cors: {
       origin: "http://localhost:5173",
       methods: ["GET", "POST"],
@@ -12,3 +13,6 @@ function initSocket(server: any) {
 }
 
 export default initSocket;
+
+
+export { io };

@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config({ path: "./.env" });
 import express from "express";
-const cors = require("cors");
+import cors from "cors";
+import { getLocalIPv4 } from "./utils/os";
 
 const app = express();
 import cookieParser from "cookie-parser";
@@ -10,10 +11,11 @@ import cookieParser from "cookie-parser";
 app.use(express.json());
 app.use(cookieParser());
 
+const Ipv4 = getLocalIPv4();
 //Cors setup
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [`${process.env.FRONTEND_URL}`, `http://${Ipv4}:5173`,"https://tx15qzwm-5173.inc1.devtunnels.ms"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
@@ -31,4 +33,4 @@ app.use("/api/v1/room", roomRouter);
 app.use("/api/v1/document", documentRouter);
 
 
-module.exports = app;
+export default app;
