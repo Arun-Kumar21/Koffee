@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { ToastAction } from "../ui/toast";
+import { ToastClose } from "../ui/toast";
 import { useToast } from "../../hooks/use-toast";
 
 interface ConnectAccessToastProps {
@@ -14,7 +15,7 @@ export default function ConnectAccessToast({
   onAccept,
   onReject,
 }: ConnectAccessToastProps) {
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast(); 
   const [isShown, setIsShown] = useState(false);
 
   useEffect(() => {
@@ -41,11 +42,13 @@ export default function ConnectAccessToast({
   const handleAccept = () => {
     setIsShown(false);
     onAccept();
+    dismiss();
   };
 
   const handleReject = () => {
     setIsShown(false);
     onReject();
+    dismiss();
   };
 
   return null;

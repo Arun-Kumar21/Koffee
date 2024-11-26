@@ -27,6 +27,7 @@ export type CommandType = {
   name : string;
   icon : ReactElement,
   action : () => boolean;
+  className? : string;
 }
 
 export type ConnectionStatusType = "connected" | "waiting" | "denied" | "error";
