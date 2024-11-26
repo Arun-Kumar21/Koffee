@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {  useEffect, useRef, useState } from "react";
 import { Editor } from "@tiptap/react";
-import { Bold, Heading1, Italic } from "lucide-react";
+import { Bold, Code, Heading1, Heading2, Highlighter, Italic, Link, List, ListCheck, ListOrdered, Strikethrough, Underline } from "lucide-react";
 import { CommandType } from "../types";
+import { BubbleMenu } from "@tiptap/react";
 
-const CommandMenu = ({
+export const CommandMenu = ({
   editor,
   keyDown,
 }: {
@@ -22,19 +23,30 @@ const CommandMenu = ({
       action: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
     },
     {
-      name: "Bold",
-      icon: <Bold size={18} />,
-      action: () => editor.chain().focus().toggleBold().run(),
+      name: "Heading 2",
+      icon: <Heading2 size={18} />,
+      action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
     },
-    {
-      name: "Italic",
-      icon: <Italic size={18} />,
-      action: () => editor.chain().focus().toggleItalic().run(),
-    },
+    // add bullet list number list task list toggle list block quote code blocl
+      {
+        name: "Bullet List",
+        icon : <List size={18} />,
+        action : () => editor.chain().focus().toggleBulletList().run()
+      },
+      {
+        name: "Number List",
+        icon : <ListOrdered size={18} />,
+        action : () => editor.chain().focus().toggleOrderedList().run()
+      },
+      {
+        name: "Code Block",
+        icon : <Code size={18} />,
+        action : () => editor.chain().focus().toggleCodeBlock().run()
+      }   
 
     // Add more commands as needed
   ];
-
+  
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -73,7 +85,19 @@ const CommandMenu = ({
   }, [query]);
 
   const handleCommandSelect = (command: CommandType) => {
+    const transaction = editor.state.tr;
+
+    const { from, to } = editor.state.selection;
+
+    if (query.startsWith("/")) {
+      const slashPosition = from - query.length;
+      transaction.delete(slashPosition, from);
+    }
+
+    editor.view.dispatch(transaction);
+
     command.action();
+
     setMenuOpen(false);
     setQuery("");
   };
@@ -106,8 +130,78 @@ const CommandMenu = ({
           )}
         </div>
       )}
+
     </div>
   );
 };
 
-export default CommandMenu;
+export const SelectMenu = ({
+  editor,
+  keyDown,
+  showSelection
+}: {
+  editor: Editor;
+  keyDown: string;
+  showSelection: boolean; 
+})=> {
+  console.log("showSelection", showSelection)
+  const selectMenu = [
+    {
+      name: "Bold",
+      icon: <Bold className="hover:p-0.5" size={18} />,
+      action: () => editor.chain().focus().toggleBold().run(),
+    },
+    {
+      name: "Italic",
+      icon: <Italic className="hover:p-0.5" size={18} />,
+      action: () => editor.chain().focus().toggleItalic().run(),
+    },
+    {
+      name: "Strike",
+      icon : <Strikethrough className="hover:p-0.5" size={18} />,
+      action : () => editor.chain().focus().toggleStrike().run()
+    }, 
+    // add underline , link , highlight
+    {
+      name: "Underline",
+      icon : <Underline className="hover:p-0.5" size={18} />,
+      action : () => editor.chain().focus().toggleUnderline().run()
+    },
+    {
+      name: "Link",
+      icon : <Link className="hover:p-0.5" size={18} />,
+      action : () => {
+        const href = prompt("Enter the URL");
+        console.log("href", href)
+        if (href) {
+          editor.chain().focus().extendMarkRange('link').setLink({ href, target: '_blank' }).run();
+        }
+      }
+    },
+    {
+      name: "Highlight",
+      icon : <Highlighter className="hover:p-0.5" size={18} />,
+      action : () => editor.chain().focus().toggleHighlight({color : "yellow"}).run()
+    }
+  ]
+  return (
+    <div>
+      <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} >
+        <div className="bg-white border border-gray-200 rounded-lg shadow-md flex gap-x-1 p-2">
+        {showSelection && selectMenu.map((command, index) => (
+          <div
+          className="bg-transparent hover:bg-gray-300 cursor-pointer active:bg-purple-600  hover:active:bg-purple-700"
+            key={index}
+            onClick={() => command.action()}
+          >
+            {command.icon}
+          </div>
+        ))}
+        </div>
+        
+        </BubbleMenu>
+
+    </div>
+  )
+
+}
